@@ -6,10 +6,12 @@ export const sampleEntries: RiceEntry[] = [
         id: uuidv4(),
         title: "Mobile App Push Notifications",
         reach: {
+            mode: 'optimise',
             eligibleToday: 45000,
-            monthlyGrowth: 1000,
+            monthlyGrowth: 2000,
+            currentAdoptionPercentage: 10,
             adoptionRatePercentage: 80,
-            context: "Based on current mobile app user base analysis with 1k new users monthly",
+            context: "Existing mobile app users - improving notification opt-in flow to increase from 10% to 80%",
         },
         impactDrivers: {
             userValue: 4,
@@ -37,10 +39,12 @@ export const sampleEntries: RiceEntry[] = [
         id: uuidv4(),
         title: "Advanced Search Filters",
         reach: {
+            mode: 'optimise',
             eligibleToday: 4500,
-            monthlyGrowth: 100,
+            monthlyGrowth: 300,
+            currentAdoptionPercentage: 20,
             adoptionRatePercentage: 60,
-            context: "Power users who frequently search and filter content, growing slowly",
+            context: "Power users who search - improving search UX to increase adoption from 20% to 60%",
         },
         impactDrivers: {
             userValue: 3,
@@ -68,10 +72,12 @@ export const sampleEntries: RiceEntry[] = [
         id: uuidv4(),
         title: "Dark Mode Theme",
         reach: {
+            mode: 'optimise',
             eligibleToday: 2200,
-            monthlyGrowth: 50,
+            monthlyGrowth: 150,
+            currentAdoptionPercentage: 0,
             adoptionRatePercentage: 40,
-            context: "Users who prefer dark interfaces, mostly power users with modest growth",
+            context: "All users eligible for dark mode - expect 40% to adopt this preference",
         },
         impactDrivers: {
             userValue: 2,
@@ -99,10 +105,10 @@ export const sampleEntries: RiceEntry[] = [
         id: uuidv4(),
         title: "AI-Powered Recommendations",
         reach: {
-            eligibleToday: 85000,
-            monthlyGrowth: 2500,
+            mode: 'acquire',
+            monthlyNewEligible: 2500,
             adoptionRatePercentage: 30,
-            context: "All active users with strong user acquisition growth, adoption depends on ML quality",
+            context: "New user acquisition via AI content discovery - targeting 2.5k monthly SOM with 30% adoption",
         },
         impactDrivers: {
             userValue: 5,
@@ -125,5 +131,36 @@ export const sampleEntries: RiceEntry[] = [
         },
         createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
         updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    },
+    {
+        id: uuidv4(),
+        title: "TikTok Integration Launch",
+        reach: {
+            mode: 'acquire',
+            monthlyNewEligible: 800,
+            adoptionRatePercentage: 25,
+            context: "New distribution channel - can reach 800 new users monthly via TikTok with 25% conversion",
+        },
+        impactDrivers: {
+            userValue: 3,
+            businessValue: 4,
+            strategicFit: 4,
+            context: "Expands our reach to younger demographics and new user segments",
+        },
+        confidenceDrivers: {
+            dataQuality: 75,
+            precedentSimilarity: 60,
+            deliveryConfidence: 80,
+            context: "TikTok API is well-documented but audience behavior is less predictable",
+        },
+        effort: {
+            frontend: 120,
+            backend: 160,
+            design: 60,
+            pm: 40,
+            context: "Third-party integration with custom content creation tools",
+        },
+        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+        updatedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
     },
 ]; 

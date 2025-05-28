@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     reachScore,
+    calculateOptimiseReach,
+    calculateAcquireReach,
     impactScore,
     confidenceScore,
     effortHours,
@@ -14,59 +16,208 @@ import type {
 } from './models';
 
 describe('riceMath', () => {
-    describe('reachScore', () => {
-        it('calculates reach correctly with 12-month formula', () => {
+    describe('calculateOptimiseReach', () => {
+        it('calculates optimise reach correctly with new formula including monthly growth', () => {
             const reach: ReachBreakdown = {
-                eligibleToday: 8000,
-                monthlyGrowth: 500,
-                adoptionRatePercentage: 25
+                mode: 'optimise',
+                eligibleToday: 600,
+                monthlyGrowth: 100,
+                currentAdoptionPercentage: 17,
+                adoptionRatePercentage: 43,
+                context: ''
             };
 
-            // (8000 + 500 * 12) * 0.25 = (8000 + 6000) * 0.25 = 14000 * 0.25 = 3500
-            expect(reachScore(reach)).toBe(3500);
+            // (600 + 100×12) × (43% - 17%) / 100 = (600 + 1200) × 26% = 1800 × 0.26 = 468
+            expect(calculateOptimiseReach(reach)).toBe(468);
+        });
+
+        it('calculates optimise reach correctly with uplift formula (legacy test with monthlyGrowth = 0)', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                eligibleToday: 10000,
+                monthlyGrowth: 0,
+                currentAdoptionPercentage: 15,
+                adoptionRatePercentage: 40,
+                context: ''
+            };
+
+            // (10000 + 0×12) × (40% - 15%) / 100 = 10000 × 25% = 2500
+            expect(calculateOptimiseReach(reach)).toBe(2500);
+        });
+
+        it('handles zero uplift (target equals current)', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                eligibleToday: 5000,
+                monthlyGrowth: 200,
+                currentAdoptionPercentage: 30,
+                adoptionRatePercentage: 30,
+                context: ''
+            };
+
+            expect(calculateOptimiseReach(reach)).toBe(0);
+        });
+
+        it('handles negative uplift (target less than current)', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                eligibleToday: 5000,
+                monthlyGrowth: 100,
+                currentAdoptionPercentage: 50,
+                adoptionRatePercentage: 30,
+                context: ''
+            };
+
+            // (5000 + 100×12) × (30% - 50%) / 100 = (5000 + 1200) × -20% = 6200 × -0.20 = -1240
+            expect(calculateOptimiseReach(reach)).toBe(-1240);
+        });
+
+        it('handles missing values with defaults', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                adoptionRatePercentage: 25,
+                context: ''
+            };
+
+            // Uses default values: 0 eligible, 0 monthly growth, 0 current adoption
+            expect(calculateOptimiseReach(reach)).toBe(0);
+        });
+    });
+
+    describe('calculateAcquireReach', () => {
+        it('calculates acquire reach correctly with 12-month formula', () => {
+            const reach: ReachBreakdown = {
+                mode: 'acquire',
+                monthlyNewEligible: 500,
+                adoptionRatePercentage: 30,
+                context: ''
+            };
+
+            // (500 * 12) * 30% = 6000 * 0.30 = 1800
+            expect(calculateAcquireReach(reach)).toBe(1800);
+        });
+
+        it('handles zero monthly new eligible', () => {
+            const reach: ReachBreakdown = {
+                mode: 'acquire',
+                monthlyNewEligible: 0,
+                adoptionRatePercentage: 50,
+                context: ''
+            };
+
+            expect(calculateAcquireReach(reach)).toBe(0);
         });
 
         it('handles zero adoption rate', () => {
             const reach: ReachBreakdown = {
-                eligibleToday: 10000,
-                monthlyGrowth: 500,
-                adoptionRatePercentage: 0
+                mode: 'acquire',
+                monthlyNewEligible: 1000,
+                adoptionRatePercentage: 0,
+                context: ''
+            };
+
+            expect(calculateAcquireReach(reach)).toBe(0);
+        });
+
+        it('handles missing values with defaults', () => {
+            const reach: ReachBreakdown = {
+                mode: 'acquire',
+                adoptionRatePercentage: 25,
+                context: ''
+            };
+
+            // Uses default values: 0 monthly new eligible
+            expect(calculateAcquireReach(reach)).toBe(0);
+        });
+
+        it('rounds decimal results to whole numbers', () => {
+            const reach: ReachBreakdown = {
+                mode: 'acquire',
+                monthlyNewEligible: 333,
+                adoptionRatePercentage: 33.33,
+                context: ''
+            };
+
+            // (333 * 12) * 0.3333 = 3996 * 0.3333 = 1331.8668, should round to 1332
+            expect(calculateAcquireReach(reach)).toBe(1332);
+        });
+    });
+
+    describe('reachScore', () => {
+        it('routes to optimise calculation for optimise mode', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                eligibleToday: 8000,
+                monthlyGrowth: 0,
+                currentAdoptionPercentage: 20,
+                adoptionRatePercentage: 45,
+                context: ''
+            };
+
+            // Should use optimise formula: (8000 + 0×12) × (45% - 20%) = 8000 × 25% = 2000
+            expect(reachScore(reach)).toBe(2000);
+        });
+
+        it('routes to acquire calculation for acquire mode', () => {
+            const reach: ReachBreakdown = {
+                mode: 'acquire',
+                monthlyNewEligible: 400,
+                adoptionRatePercentage: 25,
+                context: ''
+            };
+
+            // Should use acquire formula: (400 * 12) * 25% = 4800 * 0.25 = 1200
+            expect(reachScore(reach)).toBe(1200);
+        });
+
+        it('returns 0 for unrecognized mode', () => {
+            const reach: ReachBreakdown = {
+                mode: 'unknown' as any,
+                adoptionRatePercentage: 25,
+                context: ''
             };
 
             expect(reachScore(reach)).toBe(0);
         });
 
-        it('handles 100% adoption rate', () => {
+        it('handles complex optimise scenario', () => {
             const reach: ReachBreakdown = {
-                eligibleToday: 1000,
-                monthlyGrowth: 200,
-                adoptionRatePercentage: 100
-            };
-
-            // (1000 + 200 * 12) * 1.0 = (1000 + 2400) * 1.0 = 3400
-            expect(reachScore(reach)).toBe(3400);
-        });
-
-        it('handles zero monthly growth', () => {
-            const reach: ReachBreakdown = {
-                eligibleToday: 1000,
+                mode: 'optimise',
+                eligibleToday: 15000,
                 monthlyGrowth: 0,
-                adoptionRatePercentage: 50
+                currentAdoptionPercentage: 12,
+                adoptionRatePercentage: 35,
+                context: 'Improving onboarding flow'
             };
 
-            // (1000 + 0 * 12) * 0.5 = 1000 * 0.5 = 500
-            expect(reachScore(reach)).toBe(500);
+            // (15000 + 0×12) × (35% - 12%) = 15000 × 23% = 3450
+            expect(reachScore(reach)).toBe(3450);
         });
 
-        it('rounds decimal results to whole numbers', () => {
+        it('handles complex acquire scenario', () => {
             const reach: ReachBreakdown = {
-                eligibleToday: 1000,
-                monthlyGrowth: 100,
-                adoptionRatePercentage: 33.33
+                mode: 'acquire',
+                monthlyNewEligible: 800,
+                adoptionRatePercentage: 18,
+                context: 'New marketing channel launch'
             };
 
-            // (1000 + 100 * 12) * 0.3333 = (1000 + 1200) * 0.3333 = 2200 * 0.3333 = 732.926, should round to 733
-            expect(reachScore(reach)).toBe(733);
+            // (800 * 12) * 18% = 9600 * 0.18 = 1728
+            expect(reachScore(reach)).toBe(1728);
+        });
+
+        it('handles optimise scenario with monthly growth', () => {
+            const reach: ReachBreakdown = {
+                mode: 'optimise',
+                eligibleToday: 600,
+                monthlyGrowth: 100,
+                currentAdoptionPercentage: 17,
+                adoptionRatePercentage: 43,
+                context: 'Uplift across existing and new users'
+            };
+
+            // (600 + 100×12) × (43% - 17%) = (600 + 1200) × 26% = 1800 × 0.26 = 468
+            expect(reachScore(reach)).toBe(468);
         });
     });
 

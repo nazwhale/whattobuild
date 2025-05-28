@@ -57,47 +57,20 @@ export const RiceCard = ({ entry, onSave, onDelete, onFormDataChange }: RiceCard
 
     const formData = watch();
 
-    // 🚨 CRITICAL: MODE-AWARE FORM RESET TO PREVENT DATA CONTAMINATION
-    // This useEffect handles form reset when switching between initiatives.
-    // 
-    // ⚠️  IMPORTANT FOR AI ASSISTANTS: 
-    // - Do NOT set all reach fields regardless of mode - this causes data bleeding
-    // - MUST use mode-specific field setting with explicit clearing of other mode's fields
-    // - Each mode has exclusive fields that should be undefined for the other mode
-    //
-    // Bug context: When switching between "optimise" and "acquire" initiatives,
-    // phantom values were appearing because all fields were always set to defaults,
-    // allowing form state to leak between different modes.
+    // Reset form when entry prop changes - this fixes the bug where initiatives were being overwritten
     useEffect(() => {
-        const currentMode = entry?.reach?.mode || 'optimise';
-
         const defaultValues = {
             title: entry?.title || '',
             reach: {
-                mode: currentMode,
+                mode: entry?.reach?.mode || 'optimise',
                 adoptionRatePercentage: entry?.reach?.adoptionRatePercentage || 0,
                 context: entry?.reach?.context || '',
-
-                // 🎯 MODE-EXCLUSIVE FIELD MANAGEMENT
-                // Only populate fields relevant to the current mode.
-                // Explicitly set other mode's fields to undefined to clear form state.
-                ...(currentMode === 'optimise' ? {
-                    // ✅ OPTIMISE MODE: Set optimise-specific fields
-                    eligibleToday: entry?.reach?.eligibleToday || 0,
-                    currentAdoptionPercentage: entry?.reach?.currentAdoptionPercentage || 0,
-                    monthlyGrowth: entry?.reach?.monthlyGrowth || 0,
-
-                    // 🧹 CLEAR ACQUIRE MODE FIELDS to prevent contamination
-                    monthlyNewEligible: undefined,
-                } : {
-                    // ✅ ACQUIRE MODE: Set acquire-specific fields  
-                    monthlyNewEligible: entry?.reach?.monthlyNewEligible || 0,
-
-                    // 🧹 CLEAR OPTIMISE MODE FIELDS to prevent contamination
-                    eligibleToday: undefined,
-                    currentAdoptionPercentage: undefined,
-                    monthlyGrowth: undefined,
-                }),
+                // Optimise mode fields - ensure they always have default values
+                eligibleToday: entry?.reach?.eligibleToday || 0,
+                currentAdoptionPercentage: entry?.reach?.currentAdoptionPercentage || 0,
+                monthlyGrowth: entry?.reach?.monthlyGrowth || 0,
+                // Acquire mode fields  
+                monthlyNewEligible: entry?.reach?.monthlyNewEligible || 0,
             },
             impactDrivers: {
                 userValue: entry?.impactDrivers?.userValue || 1,
@@ -119,8 +92,6 @@ export const RiceCard = ({ entry, onSave, onDelete, onFormDataChange }: RiceCard
                 context: entry?.effort?.context || '',
             },
         };
-
-        // Apply the mode-aware reset
         reset(defaultValues);
     }, [entry, reset]);
 

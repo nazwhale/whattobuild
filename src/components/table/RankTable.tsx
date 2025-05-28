@@ -27,6 +27,18 @@ export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTablePro
             .sort((a, b) => b.scores.rice - a.scores.rice);
     }, [entries]);
 
+    // Calculate totals
+    const totals = useMemo(() => {
+        const totalReach = rankedEntries.reduce((sum, entry) => sum + entry.scores.reach, 0);
+        const totalEffortHours = rankedEntries.reduce((sum, entry) => sum + entry.scores.effort, 0);
+        const totalEffortMonths = totalEffortHours / (40 * 4.33); // Convert hours to months (40 hours/week * 4.33 weeks/month)
+
+        return {
+            reach: totalReach,
+            effortMonths: totalEffortMonths
+        };
+    }, [rankedEntries]);
+
     if (entries.length === 0) {
         return (
             <div className="card p-8 text-center text-gray-500">
@@ -44,8 +56,8 @@ export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTablePro
                         <tr className="border-b border-gray-200">
                             <th className="text-left py-3 px-2 font-medium text-gray-700">Rank</th>
                             <th className="text-left py-3 px-2 font-medium text-gray-700">Initiative</th>
-                            <th className="text-right py-3 px-2 font-medium text-gray-700">RICE Score</th>
-                            <th className="text-right py-3 px-2 font-medium text-gray-700">Reach</th>
+                            <th className="text-right py-3 px-2 font-medium text-gray-700">Score</th>
+                            <th className="text-right py-3 px-2 font-medium text-gray-700">Reach /yr</th>
                             <th className="text-right py-3 px-2 font-medium text-gray-700">Impact</th>
                             <th className="text-right py-3 px-2 font-medium text-gray-700">Confidence</th>
                             <th className="text-right py-3 px-2 font-medium text-gray-700">Effort (weeks)</th>
@@ -101,6 +113,36 @@ export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTablePro
                                 </td>
                             </tr>
                         ))}
+
+                        {/* Totals Row */}
+                        <tr className="border-t-2 border-gray-300 bg-gray-50 font-semibold">
+                            <td className="py-3 px-2"></td>
+                            <td className="py-3 px-2 text-gray-700">
+                                <div className="font-semibold">TOTALS</div>
+                                <div className="text-xs text-gray-500 font-normal">
+                                    12-month portfolio impact
+                                </div>
+                            </td>
+                            <td className="py-3 px-2 text-right"></td>
+                            <td className="py-3 px-2 text-right text-gray-700">
+                                <div className="font-bold text-blue-700">
+                                    {formatNumberForDisplay(totals.reach)}
+                                </div>
+                                <div className="text-xs text-gray-500 font-normal">
+                                    customers acquired
+                                </div>
+                            </td>
+                            <td className="py-3 px-2 text-right"></td>
+                            <td className="py-3 px-2 text-right"></td>
+                            <td className="py-3 px-2 text-right text-gray-700">
+                                <div className="font-bold text-orange-700">
+                                    {totals.effortMonths.toFixed(1)}
+                                </div>
+                                <div className="text-xs text-gray-500 font-normal">
+                                    months
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

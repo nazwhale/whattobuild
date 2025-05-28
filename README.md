@@ -70,9 +70,19 @@ export type EffortBreakdown = {
   pm: number;
 };
 
+export type ReachMode = 'optimise' | 'acquire';
+
 export type ReachBreakdown = {
-  eligibleUsers: number;      // full audience
-  adoptionRatePercentage: number;   // 0‑100
+  mode: ReachMode;                    // calculation mode selector
+  adoptionRatePercentage: number;     // 0‑100 (common to both modes)
+  context?: string;
+  
+  // Optimise mode fields (existing cohort uplift)
+  eligibleToday?: number;             // current eligible users
+  currentAdoptionPercentage?: number; // current adoption rate
+  
+  // Acquire mode fields (new audience growth)
+  monthlyNewEligible?: number;        // monthly new users in SOM
 };
 
 export type ImpactDrivers = {
@@ -103,10 +113,33 @@ export type RiceEntry = {
 
 ## 4. Maths (lib/riceMath.ts)
 
-```ts
-export const reachScore = (r: ReachBreakdown) =>
-  r.eligibleUsers * (r.adoptionRatePct / 100);
+### Reach Calculation Modes
 
+The app supports two distinct reach calculation modes to handle different initiative types:
+
+#### **Optimise Mode** (Existing Cohort Uplift)
+```ts
+export const calculateOptimiseReach = (r: ReachBreakdown) =>
+  Math.round(eligibleToday * (targetAdoption% - currentAdoption%) / 100);
+```
+**Use Case:** Improving existing features or user flows  
+**Question:** "How many extra people will succeed because of the uplift?"  
+**Example:** Improving onboarding flow to increase feature adoption from 15% to 40%
+
+#### **Acquire Mode** (New Audience Growth)
+```ts
+export const calculateAcquireReach = (r: ReachBreakdown) =>
+  Math.round((monthlyNewEligible * 12) * (adoptionRate% / 100));
+```
+**Use Case:** Launching new channels or targeting fresh user segments  
+**Question:** "How many of the fresh faces will we win next year?"  
+**Example:** TikTok integration targeting 800 monthly new users with 25% conversion  
+
+**Important:** Monthly new eligible should reference SOM (Serviceable Obtainable Market), not TAM or SAM. This prevents "blue-sky" initiatives from unfairly dwarfing optimization work in stack-rank.
+
+### Other Scoring Functions
+
+```ts
 export const impactScore = (d: ImpactDrivers) => {
   const weighted = d.userValue * 0.4 + d.businessValue * 0.4 + d.strategicFit * 0.2;
   return (weighted / 5) * 3; // map 1‑5 ⇒ 0.6‑3
@@ -162,11 +195,17 @@ export const useLocalRice = () =>
 
 ## 7. Features
 
+- 🎯 **Dual Reach Modes**: Separate "Optimise" vs "Acquire" lenses for existing vs new cohorts
+  - **Optimise Mode**: Calculate uplift for existing users (Current users × adoption improvement)
+  - **Acquire Mode**: Calculate new user acquisition (Monthly SOM × 12 × adoption rate)  
+  - **Smart Formulas**: Prevents optimization work from being dwarfed by "blue-sky" initiatives
+  - **Helper Badges**: Shows the math behind each calculation with real-time updates
 - 🔢 **Smart Number Input**: Eligible users can be entered and displayed in thousands format (e.g., `5.1k` for 5,100 users)
 - 📊 **RICE Scoring**: Calculates Reach × Impact × Confidence ÷ Effort scores automatically
 - 🏆 **Live Rankings**: See real-time RICE score rankings as you input data
 - 💾 **Local Storage**: All data persists locally in your browser (no server needed)
 - 📤 **Export/Import**: Backup and restore your RICE data across browser sessions with JSON export/import
+- 🔄 **Legacy Support**: Automatically converts old reach format to new dual-mode structure
 - 🎯 **Weighted Impact**: Advanced impact scoring with User Value (40%), Business Value (40%), and Strategic Fit (20%)
 - ⚡ **Live Updates**: Scores update in real-time as you modify inputs
 - 📱 **Mobile Friendly**: Responsive design works on desktop and mobile
