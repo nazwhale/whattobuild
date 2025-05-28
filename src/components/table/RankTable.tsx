@@ -7,9 +7,10 @@ interface RankTableProps {
     entries: RiceEntry[];
     onEditEntry: (entry: RiceEntry) => void;
     editingEntryId?: string | null;
+    arpu: number;
 }
 
-export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTableProps) => {
+export const RankTable = ({ entries, onEditEntry, editingEntryId, arpu }: RankTableProps) => {
     const rankedEntries = useMemo(() => {
         return entries
             .map(entry => {
@@ -32,12 +33,14 @@ export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTablePro
         const totalReach = rankedEntries.reduce((sum, entry) => sum + entry.scores.reach, 0);
         const totalEffortHours = rankedEntries.reduce((sum, entry) => sum + entry.scores.effort, 0);
         const totalEffortMonths = totalEffortHours / (40 * 4.33); // Convert hours to months (40 hours/week * 4.33 weeks/month)
+        const arrUplift = arpu * 12 * totalReach; // ARPU × 12 × customers acquired
 
         return {
             reach: totalReach,
-            effortMonths: totalEffortMonths
+            effortMonths: totalEffortMonths,
+            arrUplift: arrUplift
         };
-    }, [rankedEntries]);
+    }, [rankedEntries, arpu]);
 
     if (entries.length === 0) {
         return (
@@ -145,6 +148,24 @@ export const RankTable = ({ entries, onEditEntry, editingEntryId }: RankTablePro
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            {/* ARR Uplift Summary */}
+            <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-bold text-green-800">💰 Annual Recurring Revenue (ARR) Uplift</h3>
+                        <p className="text-sm text-green-600">
+                            £{arpu.toFixed(2)} ARPU × 12 months × {formatNumberForDisplay(totals.reach)} customers
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-3xl font-bold text-green-800">
+                            £{formatNumberForDisplay(totals.arrUplift)}
+                        </div>
+                        <div className="text-sm text-green-600">annual uplift</div>
+                    </div>
+                </div>
             </div>
 
             <div className="mt-4 text-sm text-gray-500">

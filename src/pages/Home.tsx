@@ -2,14 +2,17 @@ import { useState, useRef, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { RiceEntry } from '../lib/models';
 import { useLocalRice } from '../hooks/useLocalRice';
+import { useARPU } from '../hooks/useARPU';
 import { RiceCard } from '../components/card/RiceCard';
 import { RankTable } from '../components/table/RankTable';
+import { ARPUConfig } from '../components/config/ARPUConfig';
 import { Button } from '../components/common/Button';
 import { sampleEntries } from '../lib/sampleData';
 import { validateImportData, type ExportData } from '../lib/dataValidation';
 
 export const Home = () => {
     const [entries, setEntries] = useLocalRice();
+    const [arpu, setArpu] = useARPU();
     const [editingEntry, setEditingEntry] = useState<RiceEntry | null>(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -260,6 +263,9 @@ export const Home = () => {
                     )}
                 </div>
 
+                {/* ARPU Configuration */}
+                <ARPUConfig arpu={arpu} onARPUChange={setArpu} />
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column - Entry Form */}
                     <div>
@@ -307,6 +313,7 @@ export const Home = () => {
                             entries={entries}
                             onEditEntry={handleEditEntry}
                             editingEntryId={editingEntry?.id || null}
+                            arpu={arpu}
                         />
                     </div>
                 </div>
