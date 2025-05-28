@@ -142,8 +142,6 @@ export const RiceCard = ({ entry, onSave, onDelete, onFormDataChange }: RiceCard
 
         if (reach.mode === 'optimise') {
             const { eligibleToday = 0, monthlyGrowth = 0, adoptionRatePercentage = 0, currentAdoptionPercentage = 0 } = reach;
-            const uplift = adoptionRatePercentage - currentAdoptionPercentage;
-            const totalEligible = eligibleToday + (monthlyGrowth * 12);
             return `+${formatNumberForDisplay(reachValue)} users from uplift (${currentAdoptionPercentage} % → ${adoptionRatePercentage} %) across today's base and 12 months of new sign-ups`;
         } else {
             const { monthlyNewEligible = 0, adoptionRatePercentage = 0 } = reach;

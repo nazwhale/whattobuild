@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { isValidEntry, validateImportData } from './dataValidation';
-import type { RiceEntry } from './models';
 
 describe('dataValidation', () => {
     describe('isValidEntry', () => {
